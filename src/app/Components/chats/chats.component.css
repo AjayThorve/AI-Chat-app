@@ -1,0 +1,36 @@
+.chat-text-r{
+  width: 75%;
+}
+.card-panel{
+  padding: 25px;
+}
+
+@media only screen
+and (max-device-width : 480px) {
+  .chat-text-r{
+    width: 100%;
+  }
+}
+.send-image{
+  float: right;
+}
+
+.chat-text-s{
+  width: 75%;
+  margin-left: 25%;
+}
+
+@media only screen
+and (min-device-width : 320px)
+and (max-device-width : 480px) {
+  .chat-text-s{
+    width: 100%;
+    margin-left: 0%;
+  }
+}
+
+.card-panel{
+  padding: 15px;
+}
+
+

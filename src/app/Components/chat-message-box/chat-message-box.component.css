@@ -1,0 +1,14 @@
+.card{
+  width: 80%;
+  height: 70%;
+  align-content: center;
+  margin-left: 10%;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.main{
+  align-content: center;
+
+}

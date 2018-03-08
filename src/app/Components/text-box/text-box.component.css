@@ -1,0 +1,9 @@
+.chat-text{
+  width: 80%;
+  align-content: center;
+  margin-left: 10%;
+}
+
+.btn-send{
+  float: right;
+}
