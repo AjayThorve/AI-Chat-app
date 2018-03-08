@@ -12,7 +12,7 @@ Net id: aat414
 
     code in lamda-function.js
     
-<img src="lambda-setup.png"></img>
+![alt text](https://raw.githubusercontent.com/AjayThorve/AI-Chat-app/master/lamda-setup.png)
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 1.2.7.
 
