@@ -34,7 +34,9 @@ Net id: aat414
 
 ## 6. Cognito Setup
 
-![cognito]
+![cognito](images/cognito-setup.png)
+
+#### Note
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 1.2.7.
 
 ## Development server
