@@ -80,9 +80,9 @@ export class AwsAuthService {
     // Initialize the Amazon Cognito credentials provider
     AWS.config.region = 'us-east-1'; // Region
     AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-      IdentityPoolId: 'us-east-1:4cd7afa6-4244-43ba-ac50-a5136f34c3a4',
+      IdentityPoolId: 'us-east-1:identitypool',
       Logins : {
-        'cognito-idp.us-east-1.amazonaws.com/us-east-1_0V8ZtbF52': idToken
+        'cognito-idp.us-east-1.amazonaws.com/us-east-1_XXXXXXXXX': idToken
       }
     });
     const credentials_temp = new CredObj();
