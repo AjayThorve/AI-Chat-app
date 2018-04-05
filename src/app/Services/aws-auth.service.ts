@@ -1,113 +1,129 @@
 import { Injectable } from '@angular/core';
-import {AuthenticationDetails, CognitoUser, CognitoUserAttribute, CognitoUserPool} from 'amazon-cognito-identity-js';
-import {Router} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {Subject} from 'rxjs/Subject';
-import { HttpClient } from '@angular/common/http';
+import {HttpClient, HttpHeaders, HttpParams} from '@angular/common/http';
+import { URLSearchParams } from '@angular/http';
+import * as AWS from 'aws-sdk';
+import { CognitoAuth } from 'amazon-cognito-auth-js';
+import {BehaviorSubject} from 'rxjs/BehaviorSubject';
+import { CredObj } from '../Interfaces/CredObj.type';
 
-const PoolData = {
-  UserPoolId: 'us-east-xxxxxxxxxxx',
-  ClientId: 'xxxxxxxxxxxxxxxxxxxxxxxx'
+const authData = {
+  ClientId : 'Your client id here', // Your client id here
+  AppWebDomain : 'samchatapp.auth.us-east-1.amazoncognito.com',
+  TokenScopesArray : ['phone', 'email', 'profile', 'openid', 'aws.cognito.signin.user.admin'],
+  RedirectUriSignIn : 'https://s3.amazonaws.com/elasticbeanstalk-us-east-1-878823813267/index.html',
+  RedirectUriSignOut : 'https://s3.amazonaws.com/elasticbeanstalk-us-east-1-878823813267/index.html',
+  IdentityProvider : '', // e.g. 'Facebook',
+  UserPoolId : 'us-east-1_XXXXXXXXX', // Your user pool id here
+  AdvancedSecurityDataCollectionFlag : false,
 };
-
-const userPool = new CognitoUserPool(PoolData);
 
 @Injectable()
 export class AwsAuthService {
 
-  private isUser = new Subject<Boolean>();
-  user = this.isUser.asObservable();
+  private isSignedIn: Subject<boolean> = new BehaviorSubject<boolean>(false);
 
-  constructor(private router: Router, private http: HttpClient) {
-    this.isUser.next(false);
-  }
+  signIn = this.isSignedIn.asObservable();
 
-  // Sign Up User
-  signupUser(user: string, password: string, email: string) {
-    const dataEmail = {
-      Name: 'email',
-      Value: email
-    };
-    const dataPhoneNumber = {
-      Name : 'phone_number',
-      Value : '+15555555555'
-    };
-    const  emailAtt = new CognitoUserAttribute(dataEmail);
-    const phoneAtt = new CognitoUserAttribute(dataPhoneNumber);
-    const attributeList = [];
-    attributeList.push(phoneAtt);
-    attributeList.push(emailAtt);
-    console.log(attributeList);
-    userPool.signUp(user, password, attributeList, null, ((err, result) => {
-      if (err) {
-        console.log('There was an error ', err);
-      } else {
-        console.log('You have successfully signed up, please confirm your email ');
-      }
-    }));
-  }
-  //
-  // Confirm User
+  private credentials = new Subject<CredObj>();
+  credentials_values = this.credentials.asObservable();
+  private username = 'user';
 
-  authenticateUser(code: string){
-    const cognitoUser = userPool.getCurrentUser();
+  auth = new CognitoAuth(authData);
 
-
-  }
-  confirmUser(username: string, code: string) {
-    const userData = {
-      Username: username,
-      Pool: userPool
-    };
-
-    const cognitoUser = new CognitoUser(userData);
-
-    cognitoUser.confirmRegistration(code, true, (err, result) => {
-      if (err) {
-        console.log('There was an error -> ', err);
-      } else {
-        console.log('You have been confirmed ');
-      }
-    });
-  }
-
-  createAuthorizationHeader(headers: Headers) {
-    headers.append('Authorization', 'Basic ' +
-      btoa('a20e6aca-ee83-44bc-8033-b41f3078c2b6:c199f9c8-0548-4be79655-7ef7d7bf9d20'));
-  }
-  //
-  // // Sign in User
-  //
-  signinUser(username: string, password: string) {
-    const authData = {
-      Username: username,
-      Password: password
-    };
-    const authDetails = new AuthenticationDetails(authData);
-    const userData = {
-      Username: username,
-      Pool: userPool
-    };
-    const cognitoUser = new CognitoUser(userData);
-
-    cognitoUser.authenticateUser(authDetails, {
-      onSuccess: (result) => {
-        console.log('You are now Logged in');
-        console.log(userPool.getCurrentUser());
-        this.isUser.next(true);
-        this.router.navigate(['dashboard']);
+  constructor(private router: Router, private http: HttpClient, private route: ActivatedRoute) {
+    const that = this;
+    this.auth.userhandler = {
+      onSuccess: function(result) {
+        console.log('Sign in success');
+        that.setSignIn();
+        that.showSignedIn(result);
       },
-      onFailure: (err) => {
-        console.log('There was an error during login, please try again -> ', err);
+      onFailure: function(err) {
+        console.log('sign in Error' + err);
+        that.setSignInFail();
+      }
+    };
+    this.auth.useCodeGrantFlow();
+
+    const curUrl = window.location.href;
+    this.auth.parseCognitoWebResponse(curUrl);
+  }
+
+  showSignedIn(session) {
+    if (session) {
+      const idToken = session.getIdToken().getJwtToken();
+      if (idToken) {
+        const payload = idToken.split('.')[1];
+        const tokenobj = JSON.parse(atob(payload));
+        const formatted = JSON.stringify(tokenobj, undefined, 2);
+        console.log('id token: \n' + formatted);
+        this.setCredentials(idToken);
+      }
+      const accToken = session.getAccessToken().getJwtToken();
+      if (accToken) {
+        const payload = accToken.split('.')[1];
+        const tokenobj = JSON.parse(atob(payload));
+        this.username = tokenobj.username;
+        const formatted = JSON.stringify(tokenobj, undefined, 2);
+        console.log('access token: \n' + formatted);
+      }
+      const refToken = session.getRefreshToken().getToken();
+      if (refToken) {
+        console.log('refresh token: \n' + refToken.substring(1, 20));
+      }
+    }
+  }
+
+  setCredentials(idToken) {
+    // Initialize the Amazon Cognito credentials provider
+    AWS.config.region = 'us-east-1'; // Region
+    AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+      IdentityPoolId: 'us-east-1:4cd7afa6-4244-43ba-ac50-a5136f34c3a4',
+      Logins : {
+        'cognito-idp.us-east-1.amazonaws.com/us-east-1_0V8ZtbF52': idToken
+      }
+    });
+    const credentials_temp = new CredObj();
+    const that = this;
+    AWS.config.getCredentials(function (err) {
+      if (err) {
+        console.log(err.stack);
+      }else {
+        credentials_temp.accessKey = AWS.config.credentials.accessKeyId;
+        credentials_temp.secretKey = AWS.config.credentials.secretAccessKey;
+        credentials_temp.sessionToken = AWS.config.credentials.sessionToken;
+        credentials_temp.region = AWS.config.region;
+        that.credentials.next(credentials_temp);
       }
     });
   }
-  // Log User Out
-  logoutUser() {
-    console.log(userPool.getCurrentUser());
-    userPool.getCurrentUser().signOut();
 
-    this.isUser.next(false);
-    console.log('logged out');
-    this.router.navigate(['userAuth']);
+  getUserName() {
+    return this.username;
   }
+  setSignIn(){
+    this.isSignedIn.next(true);
+  }
+
+  setSignInFail(){
+    this.isSignedIn.next(false);
+  }
+
+  logoutUser() {
+    this.auth.signOut();
+  }
+
+  signInUser(){
+    this.auth.getSession();
+  }
+
+  getStatus() {
+    return this.signIn._isScalar;
+  }
+
+
+
+
 }

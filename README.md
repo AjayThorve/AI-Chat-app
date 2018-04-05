@@ -5,8 +5,7 @@ Name : Ajay Thorve
 Net id: aat414
 
 ## 1. Links
-   1. <a target="_blank" href= "https://samchatapp.auth.us-east-1.amazoncognito.com/login?response_type=code&client_id=4nhjmiq6aaer3aqd81ck26tmlb&redirect_uri=https://s3.amazonaws.com/elasticbeanstalk-us-east-1-878823813267/index.html">Cognito Auth Page</a>
-   2. <a target="_blank" href= "https://s3.amazonaws.com/elasticbeanstalk-us-east-1-878823813267/index.html">S3 bucket</a> 
+    <a target="_blank" href= "https://s3.amazonaws.com/elasticbeanstalk-us-east-1-878823813267/index.html">S3 bucket</a> 
    
 ## 2. Source Code
 
@@ -35,6 +34,12 @@ Net id: aat414
 ## 6. Cognito Setup
 
 ![cognito](images/cognito-setup.png)
+
+
+## 7. Assignment 2 complete:
+
+added new lambda functions and lex bot functionalities
+
 
 #### Note
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 1.2.7.

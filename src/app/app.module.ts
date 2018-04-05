@@ -13,17 +13,21 @@ import { DataService } from './Services/data.service';
 import { RouterModule, Routes } from '@angular/router';
 import { HomeComponent } from './Components/home/home.component';
 import { AwsAuthService } from './Services/aws-auth.service';
+import { AuthenticateComponent } from './Components/authenticate/authenticate.component';
 
 const appRoutes: Routes = [
   {
-    path: 'index.html',
-    component: AppComponent
+    path: 'index', component: AppComponent
   },
   {
-    path: 'dashboard',
-    component: HomeComponent
+    path: 'authenticate', component: AuthenticateComponent
+  },
+  {
+    path: 'home', component: HomeComponent
   }
 ];
+
+
 @NgModule({
   declarations: [
     AppComponent,
@@ -31,7 +35,8 @@ const appRoutes: Routes = [
     NavbarComponent,
     TextBoxComponent,
     ChatsComponent,
-    HomeComponent
+    HomeComponent,
+    AuthenticateComponent
   ],
   imports: [
     BrowserModule,

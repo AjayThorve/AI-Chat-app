@@ -12,17 +12,24 @@ export class AppComponent {
   code = '';
   constructor(private router: Router,
               public awsAuth: AwsAuthService,
-              private route: ActivatedRoute) {
+              ) {
+    console.log("init app component");
 
-    route.queryParams.subscribe(
+    // if(this.awsAuth.getStatus() == false){
+    //   this.router.navigate(['authenticate']);
+    // }else{
+    //   this.router.navigate(['home']);
+    // }
+    this.awsAuth.signIn.subscribe(
       data => {
-        if (data['code'] != null) {
-          console.log('queryParams', data['code']);
-          this.code = data['code'];
-          console.log('code is ' + this.code);
+        console.log("inside app component: value is" + data);
+        if(data == true){
+          this.router.navigate(['home']);
+        }else{
+          this.router.navigate(['authenticate']);
         }
-        this.router.navigate(['dashboard']);
-    });
+      }
+    );
   }
 
 }

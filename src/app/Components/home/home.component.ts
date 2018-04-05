@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import {AwsAuthService} from "../../Services/aws-auth.service";
+import {Router} from "@angular/router";
 
 @Component({
   selector: 'app-home',
@@ -7,7 +9,17 @@ import { Component, OnInit } from '@angular/core';
 })
 export class HomeComponent implements OnInit {
 
-  constructor() { }
+  constructor(private router: Router, public awsAuth: AwsAuthService) {
+
+    this.awsAuth.signIn.subscribe(
+      data => {
+        console.log('inside homecomponent: value is' + data);
+        if (data == false) {
+          this.router.navigate(['authenticate']);
+        }
+      }
+    );
+  }
 
   ngOnInit() {
   }

@@ -2,7 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { ChatMessage } from '../../Models/ChatMessage.model';
 import { DataService } from '../../Services/data.service';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
+import {AwsAuthService} from '../../Services/aws-auth.service';
 declare var apigClientFactory: any;
+import { CredObj } from '../../Interfaces/CredObj.type';
 
 @Component({
   selector: 'app-chat-message-box',
@@ -13,9 +15,26 @@ export class ChatMessageBoxComponent implements OnInit {
 
   apigClient: any;
   messages: ChatMessage[] = [];
-  constructor(private dataService: DataService, private http: HttpClient) {
-    this.apigClient = apigClientFactory.newClient();
-    this.messages.push(new ChatMessage('Hi user, How can I help you today?', 'received'));
+  constructor(private dataService: DataService,
+              private awsAuth: AwsAuthService,
+              private http: HttpClient) {
+
+    this.awsAuth.credentials_values.subscribe(
+      data => {
+        console.log(data.accessKey);
+        this.apigClient = apigClientFactory.newClient(
+          {
+            accessKey: data.accessKey,
+            secretKey: data.secretKey,
+            sessionToken: data.sessionToken,
+            region: data.region
+          }
+        );
+      }
+    );
+    const username: string = awsAuth.getUserName();
+    const welcome_msg: string = 'Hi ' + username + ', How can I help you today?';
+    this.messages.push(new ChatMessage(welcome_msg, 'received'));
   }
 
   ngOnInit() {
