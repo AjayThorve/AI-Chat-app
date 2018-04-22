@@ -5,7 +5,11 @@ import pprint
 import requests
 import sys
 import os.path
-
+import boto3
+import datetime
+import time
+from decimal import Decimal
+import config
 # This client code can run on Python 2.x or 3.x.  Your imports can be
 # simpler if you only need one of those.
 try:
@@ -23,14 +27,19 @@ class YelpScrapper():
     '''
     class for scrapping data from yelp fusion api
     '''
-    API_KEY= 'JYBecCIDNufGfzq5BIYVfTrd5idsPjwY6RWbyTxkTWTZ7BZi9NQdawm2DGBGz3EwnQc2Wu8mM5uq1lHAG4Eby_T-ACe7uWU6Tr82FaCfgvKcHh5p3KhVIrfYQL--WnYx' 
+    API_KEY= config.api_key
+    
     # API constants, you shouldn't have to change these.
     API_HOST = 'https://api.yelp.com'
     SEARCH_PATH = '/v3/businesses/search'
     BUSINESS_PATH = '/v3/businesses/'  # Business ID will come after slash.
 
     set_of_rest = set()
-
+    
+    #to store data to dynamodb
+    dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+    table = dynamodb.Table('yelp-restraunts')
+    
     def request(self,host, path, api_key, url_params=None):
         """Given your API_KEY, send a GET request to the API.
         Args:
@@ -68,7 +77,7 @@ class YelpScrapper():
             'limit': 50
         }
         a = self.request(self.API_HOST, self.SEARCH_PATH, self.API_KEY, url_params=url_params).get('businesses')
-        filepath = 'food.csv'
+        filepath = 'FILE_1.csv'
         if a is not None:
             if not os.path.isfile(filepath):
                 with open(filepath, 'w') as f:
@@ -76,7 +85,33 @@ class YelpScrapper():
             fd = open(filepath,'a')
             for i in a:
                 if i['id'] not in self.set_of_rest:
-                    temp_str = str(str(i['id'])+","+str(term.split(' ')[0])+","+str(i['rating'])+","+str(i['review_count'])+"\n")
-                    fd.write(temp_str)
-                    self.set_of_rest.add(i['id'])
+                    if self.insertDynamo(i):
+                        temp_str = str(str(i['id'])+","+str(term.split(' ')[0])+","+str(i['rating'])+","+str(i['review_count'])+"\n")
+                        fd.write(temp_str)
+                        self.set_of_rest.add(i['id'])
+                    else:
+                        print("caught error row, skipping")
             fd.close()
+    
+    def processItem(self,item):
+        ts = time.time()
+        requested_keys = [ "id", "name", "coordinates","review_count", "rating"]
+        updated_item = { temp_key: item[temp_key] for temp_key in requested_keys }
+        try:
+            updated_item['address'] = item['location']['address1'] +","+ item['location']['city']
+            updated_item['zip_code'] = item['location']['zip_code']
+            updated_item['coordinates']['latitude'] = Decimal(str(updated_item['coordinates']['latitude']))
+            updated_item['coordinates']['longitude'] = Decimal(str(updated_item['coordinates']['longitude']))
+            updated_item['rating'] = Decimal(str(updated_item['rating']))
+            updated_item["insertedAtTimestamp"] = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+        except TypeError:
+            return False
+        updated_item = {k: v for k, v in updated_item.items() if v!=''}
+        return updated_item
+        
+    def insertDynamo(self,item):
+        updated_item = self.processItem(item)
+        if not updated_item:
+            return False
+        response = self.table.put_item(Item=updated_item)
+        return True

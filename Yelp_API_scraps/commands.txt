@@ -1,4 +1,4 @@
-#using the following command line statements to import the dataset and save it to food.csv
+#using the following command line statements to import the dataset and save it to FILE_1.csv
 echo "connecting to yelp api..."
 
 echo "getting chinese restaurants..."
@@ -22,4 +22,9 @@ python3 index.py --term="thai" --li=1000
 echo "getting spanish restaurants..."
 python3 index.py --term="spanish" --li=1000
 
-echo "check food.csv file for all the restaurants!"
+echo "check FILE_1.csv file for all the restaurants!"
+
+echo "saving file to s3..."
+
+python3 save_to_s3.py
+echo complete
