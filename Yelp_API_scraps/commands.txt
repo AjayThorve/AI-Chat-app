@@ -1,0 +1,30 @@
+#using the following command line statements to import the dataset and save it to FILE_1.csv
+echo "connecting to yelp api..."
+
+echo "getting chinese restaurants..."
+python3 index.py --term="chinese" --li=1000
+
+echo "getting indian restaurants..."
+python3 index.py --term="indian" --li=1000
+
+echo "getting italian restaurants..."
+python3 index.py --term="italian" --li=1000
+
+echo "getting japanese restaurants..."
+python3 index.py --term="japanese" --li=1000
+
+echo "getting mexican restaurants..."
+python3 index.py --term="mexican" --li=1000
+
+echo "getting thai restaurants..."
+python3 index.py --term="thai" --li=1000
+
+echo "getting spanish restaurants..."
+python3 index.py --term="spanish" --li=1000
+
+echo "check FILE_1.csv file for all the restaurants!"
+
+echo "saving file to s3..."
+
+python3 save_to_s3.py
+echo complete
